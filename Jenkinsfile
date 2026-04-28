@@ -36,24 +36,37 @@ pipeline {
             }
         }
 
-        stage('Scan Docker Image') {
+        stage('Trivy FS Scan') {
             steps {
-                script {
-                    def trivyOutput = sh(
-                        script: "trivy image myapp:latest",
-                        returnStdout: true
-                    ).trim()
+                sh """
+                    echo "Running Trivy filesystem scan on workspace..."
 
-                    println trivyOutput
+                    trivy fs \
+                        --severity HIGH,CRITICAL \
+                        --format json \
+                        --output trivy-fs-report.json \
+                        .
 
-                    if (trivyOutput.contains("Total: 0")) {
-                        echo "No vulnerabilities found in the Docker image."
-                    } else {
-                        echo "Vulnerabilities found in the Docker image."
-                    }
-                }
+                    trivy fs \
+                        --severity HIGH,CRITICAL \
+                        --exit-code 1 \
+                        --no-progress \
+                        .
+                """
             }
         }
+    }
 
+    post {
+        always {
+            archiveArtifacts artifacts: 'trivy-fs-report.json', allowEmptyArchive: true
+            echo "Pipeline finished."
+        }
+        success {
+            echo "Deployment + security scan successful."
+        }
+        failure {
+            echo "Pipeline failed (build/deploy/scan). Check logs."
+        }
     }
 }
