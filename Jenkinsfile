@@ -3,7 +3,7 @@ pipeline {
 
     stages {
 
-        stage('init') {
+        stage('Init') {
             steps {
                 sh """
                     echo "Cleaning old containers..."
@@ -18,7 +18,7 @@ pipeline {
             }
         }
 
-        stage('build') {
+        stage('Build') {
             steps {
                 sh """
                     echo "Building Docker image..."
@@ -27,11 +27,21 @@ pipeline {
             }
         }
 
-        stage('deploy') {
+        stage('Deploy') {
             steps {
                 sh """
                     echo "Starting containers..."
                     docker compose up -d --force-recreate
+                """
+            }
+        }
+
+        stage('Fix Permissions') {
+            steps {
+                sh """
+                    echo "Fixing workspace permissions..."
+                    sudo chown -R jenkins:jenkins ${WORKSPACE}
+                    sudo chmod -R 755 ${WORKSPACE}
                 """
             }
         }
