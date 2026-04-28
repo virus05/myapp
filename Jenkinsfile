@@ -17,7 +17,9 @@ pipeline {
 		}
                 stage('Run app.py') {
                         steps {
-                                sh "python3 app.py"
+                                sh """
+					./venv/bin/python app.py
+				"""
                         }
                 }
         }
