@@ -44,7 +44,7 @@ pipeline {
                     trivy fs \
                         --severity HIGH,CRITICAL \
                         --format json \
-                        --output trivy-fs-report.json \
+                        --output ${WORKSPACE}/trivy-fs-report.json \
                         .
 
                     trivy fs \
@@ -55,18 +55,39 @@ pipeline {
                 """
             }
         }
+
+        stage('Trivy Image Scan') {
+            steps {
+                sh """
+                    echo "Running Trivy image scan on myapp:latest..."
+
+                    trivy image \
+                        --severity HIGH,CRITICAL \
+                        --format json \
+                        --output ${WORKSPACE}/trivy-image-report.json \
+                        myapp:latest
+
+                    trivy image \
+                        --severity HIGH,CRITICAL \
+                        --exit-code 1 \
+                        --no-progress \
+                        myapp:latest
+                """
+            }
+        }
     }
 
     post {
         always {
             archiveArtifacts artifacts: 'trivy-fs-report.json', allowEmptyArchive: true
+            archiveArtifacts artifacts: 'trivy-image-report.json', allowEmptyArchive: true
             echo "Pipeline finished."
         }
         success {
-            echo "Deployment + security scan successful."
+            echo "Deployment and security scans successful."
         }
         failure {
-            echo "Pipeline failed (build/deploy/scan). Check logs."
+            echo "Pipeline failed. Check build, deploy, or Trivy scan logs."
         }
     }
 }
