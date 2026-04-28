@@ -3,10 +3,16 @@ pipeline {
 
     stages {
 
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
         stage('Init') {
             steps {
                 sh """
-                    echo "Cleaning old containers..."
+                    echo "Stopping old containers..."
                     docker compose down || true
 
                     echo "Creating network if missing..."
@@ -30,7 +36,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 sh """
-                    echo "Starting containers..."
+                    echo "Deploying containers..."
                     docker compose up -d --force-recreate
                 """
             }
@@ -45,13 +51,13 @@ pipeline {
                         --severity HIGH,CRITICAL \
                         --format json \
                         --output ${WORKSPACE}/trivy-fs-report.json \
-                        .
+                        ${WORKSPACE}
 
                     trivy fs \
                         --severity HIGH,CRITICAL \
                         --exit-code 1 \
                         --no-progress \
-                        .
+                        ${WORKSPACE}
                 """
             }
         }
@@ -81,13 +87,13 @@ pipeline {
         always {
             archiveArtifacts artifacts: 'trivy-fs-report.json', allowEmptyArchive: true
             archiveArtifacts artifacts: 'trivy-image-report.json', allowEmptyArchive: true
-            echo "Pipeline finished."
+            echo "Pipeline completed."
         }
         success {
-            echo "Deployment and security scans successful."
+            echo "Build, deploy, and security scans successful."
         }
         failure {
-            echo "Pipeline failed. Check logs."
+            echo "Pipeline failed. Check logs for details."
         }
     }
 }
