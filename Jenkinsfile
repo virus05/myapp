@@ -8,7 +8,11 @@ pipeline {
                 }
 		stage('Instal dependencies'){
 			steps {
-				sh "pip install flask"
+				sh """
+					python3 -m venv venv
+					. venv/bin/activate
+					pip install -r requirements.txt
+				"""
 			}
 		}
                 stage('Run app.py') {
