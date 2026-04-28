@@ -1,27 +1,51 @@
 pipeline {
-        agent any
-        stages {
-                stage('Checkout') {
-                        steps {
-                                checkout scm
-                        }
-                }
-		stage('Instal dependencies'){
-			steps {
-				sh """
-					python3 -m venv venv
-					. venv/bin/activate
-					pip install -r requirements.txt
-				"""
-			}
-		}
-                stage('Run app.py') {
-                        steps {
-                                sh """
-					./venv/bin/python app.py
-				"""
-                        }
-                }
+    agent any
+
+    stages {
+
+        stage('init') {
+            steps {
+                sh """
+                    echo "Cleaning old containers..."
+                    docker compose down || true
+
+                    echo "Creating network if missing..."
+                    docker network create myapp_net || true
+
+                    echo "Ensuring volumes exist..."
+                    docker volume create myapp_data || true
+                """
+            }
         }
 
+        stage('build') {
+            steps {
+                sh """
+                    echo "Building Docker image..."
+                    docker build -t myapp:latest .
+                """
+            }
+        }
+
+        stage('deploy') {
+            steps {
+                sh """
+                    echo "Starting containers..."
+                    docker compose up -d --force-recreate
+                """
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Deployment successful!"
+        }
+        failure {
+            echo "Deployment failed!"
+        }
+        always {
+            echo "Pipeline finished."
+        }
+    }
 }
