@@ -36,20 +36,10 @@ pipeline {
             }
         }
 
-        stage('Fix Permissions') {
-            steps {
-                sh """
-                    echo "Fixing workspace permissions..."
-                    sudo chown -R jenkins:jenkins ${WORKSPACE}
-                    sudo chmod -R 755 ${WORKSPACE}
-                """
-            }
-        }
-
         stage('Trivy FS Scan') {
             steps {
                 sh """
-                    echo "Running Trivy filesystem scan on workspace..."
+                    echo "Running Trivy filesystem scan..."
 
                     trivy fs \
                         --severity HIGH,CRITICAL \
@@ -69,7 +59,7 @@ pipeline {
         stage('Trivy Image Scan') {
             steps {
                 sh """
-                    echo "Running Trivy image scan on myapp:latest..."
+                    echo "Running Trivy image scan..."
 
                     trivy image \
                         --severity HIGH,CRITICAL \
@@ -97,7 +87,7 @@ pipeline {
             echo "Deployment and security scans successful."
         }
         failure {
-            echo "Pipeline failed. Check build, deploy, or Trivy scan logs."
+            echo "Pipeline failed. Check logs."
         }
     }
 }
